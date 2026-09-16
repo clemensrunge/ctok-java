@@ -1,6 +1,8 @@
 # ctok-java
 
-An offline Java 21 port of [sanderland/ctok](https://github.com/sanderland/ctok), based on Python ctok 1.3.0 at commit `ad78ea15a1febf983b379475b20f5a2b0d2ebe76`.
+An offline Java 21 port of [ctok by Sander Land](https://github.com/sanderland/ctok), maintained by [Clemens Runge](https://github.com/clemensrunge/ctok-java). Based on Python ctok 1.3.0 at [commit ad78ea15](https://github.com/sanderland/ctok/tree/ad78ea15a1febf983b379475b20f5a2b0d2ebe76).
+
+Verified on 2026-09-16: **330 Python tests passed** and **401,931 Python/Java comparisons matched exactly** across all three families. See [VALIDATION.md](VALIDATION.md) for inputs, commands, and execution environment. Java 21 bytecode was tested on JDK 25.
 
 The library reconstructs Claude token **counts** for one user message. Its token boundaries are approximate, as in upstream. It makes no API calls and has no runtime dependencies. Vocabulary, byte fallback, witnesses, and Unicode classification/case tables are bundled in the JAR.
 
@@ -31,10 +33,17 @@ java -jar build/libs/ctok-java-1.3.0-java.1.jar 'hello, world' 4.8
 
 The verification harness requires no test framework dependencies. `test` executes it through `verifyParity`. It checks API behavior, invalid input, immutable collections, and concurrent counting. Python parity data is generated separately to keep Python out of ordinary builds and runtime.
 
-To reproduce the cross-language comparison with the sibling upstream checkout:
+To reproduce the cross-language comparison, use the upstream checkout at the commit above. If a sibling checkout is not already available:
 
 ```sh
-(cd ../ctok && UV_CACHE_DIR=/tmp/ctok-uv-cache uv sync --locked)
+git clone https://github.com/sanderland/ctok.git ../ctok
+git -C ../ctok switch --detach ad78ea15a1febf983b379475b20f5a2b0d2ebe76
+```
+
+Run with [uv](https://docs.astral.sh/uv/) and the reference Python version:
+
+```sh
+(cd ../ctok && UV_CACHE_DIR=/tmp/ctok-uv-cache uv sync --locked --python 3.12.14)
 (cd ../ctok && UV_CACHE_DIR=/tmp/ctok-uv-cache uv run python -m pytest -n 2)
 ../ctok/.venv/bin/python tools/generate_parity.py ../ctok build/parity.bin
 ./gradlew test build -PparityFile=build/parity.bin
@@ -64,10 +73,12 @@ includeBuild("../ctok-java")
 implementation("dev.ctok:ctok-java:1.3.0-java.1")
 ```
 
-The headless analyzer's existing `dev.lochistory.analysis.TokenCounter` has `metric()` and `count(String)`. A future Claude implementation can hold a shared `Ctok.forVersion("4.8")` instance and delegate `count(text)` to `contentTokenCount(text)`, with a new Claude entry in `CountingMetric`. Include this dependency's classes and `dev/ctok/*.bin` resources when building a self-contained CLI JAR. Keep `META-INF/licenses/ctok/LICENSE` in distributions. Integration into the visualizer is intentionally left for the later task.
+The headless analyzer's existing `dev.lochistory.analysis.TokenCounter` has `metric()` and `count(String)`. A future Claude implementation can hold a shared `Ctok.forVersion("4.8")` instance and delegate `count(text)` to `contentTokenCount(text)`, with a new Claude entry in `CountingMetric`. Include this dependency's classes and `dev/ctok/*.bin` resources when building a self-contained CLI JAR. Keep the license, attribution notice, and provenance files under `META-INF/licenses/ctok/` in distributions. Integration into the visualizer is intentionally left for the later task.
 
 Validation results: [VALIDATION.md](VALIDATION.md).
 
 ## License
 
-MIT; see [LICENSE](LICENSE). Upstream vocabulary and evidence are retained under the same license. See [PROVENANCE.json](PROVENANCE.json) for source hashes and model metadata.
+MIT; see [LICENSE](LICENSE). The complete upstream MIT license and `Copyright (c) 2026 Sander Land` are retained alongside the Java port's copyright notice. The implementation, vocabulary, byte fallback, witness records, and regression examples derive from Sander Land's ctok; see [NOTICE](NOTICE) for source mapping and [PROVENANCE.json](PROVENANCE.json) for source hashes and model metadata.
+
+The main, sources, and Javadoc JARs all include `LICENSE`, `NOTICE`, and `PROVENANCE.json` under `META-INF/licenses/ctok/`. Maven publication metadata also identifies the MIT license, upstream author, and Java port maintainer.
